@@ -1,19 +1,13 @@
-// src/routes/Home.jsx
 import { BiPlus, BiDotsVerticalRounded } from 'react-icons/bi';
 import Sidebar from '../components/Sidebar';
 import { useState, useEffect, useRef } from 'react';
 import useModal from '../hooks/useModal';
 import Modal from '../components/Modal';
+import WorkspaceContent from '../components/WorkspaceContent';
 
 function Home() {
   // Estados de los workspaces y las tareas
   const [workspaces] = useState(['Project A', 'Project B', 'Project C']);
-  const [tasks] = useState([
-    { title: 'Design UI Presentation', status: 'To Do', progress: 7, max: 10, date: '24 Aug 2022' },
-    { title: 'Add More UI/UX Mockups', status: 'To Do', progress: 4, max: 10, date: '25 Aug 2022' },
-    { title: 'Design System Update', status: 'In Progress', progress: 3, max: 10, date: '12 Nov 2022' },
-  ]);
-
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [menuOpenWorkspace, setMenuOpenWorkspace] = useState(null);
 
@@ -156,36 +150,7 @@ function Home() {
         </header>
 
         {/* Área Principal con Listas de Tareas */}
-        <main className="flex-1 p-6 overflow-x-auto">
-          {/* Contenedor con desplazamiento horizontal para listas de tareas */}
-          <div className="flex space-x-6 pb-6">
-            {/* Renderizar cada sección de tareas */}
-            {['To Do', 'In Progress', 'Done', 'Review', 'Pending Approval', 'On Hold'].map((status) => (
-              <div key={status} className="flex-shrink-0 w-80">
-                <h3 className="text-xl font-semibold mb-4">{status}</h3>
-                <div className="space-y-4">
-                  {tasks
-                    .filter((task) => task.status === status)
-                    .map((task, index) => (
-                      <div key={index} className="p-4 bg-gray-800 rounded-lg shadow-md">
-                        <h4 className="text-lg font-semibold">{task.title}</h4>
-                        <p className="text-sm text-gray-400">{task.date}</p>
-                        <div className="relative pt-2">
-                          <div className="h-2 bg-gray-700 rounded-full">
-                            <div
-                              className={`h-2 rounded-full ${status === 'Done' ? 'bg-green-500' : 'bg-indigo-500'}`}
-                              style={{ width: `${(task.progress / task.max) * 100}%` }}
-                            ></div>
-                          </div>
-                          <p className="text-sm mt-2">{task.progress}/{task.max}</p>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </main>
+        <WorkspaceContent/>
       </div>
     </div>
   );
