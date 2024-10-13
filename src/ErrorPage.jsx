@@ -1,16 +1,21 @@
-import { useRouteError } from "react-router-dom";
+import { Navigate } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 
-export default function ErrorPage() {
-  const error = useRouteError();
-  console.error(error);
+const ErrorPage = () => {
+  const { isAuthenticated } = useAuth();
+
+  // Redirige al login si el usuario no está autenticado
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
 
   return (
-    <div id="error-page">
-      <h1>Oops!</h1>
+    <div className="flex items-center justify-center h-screen">
+      <h1 className="text-4xl font-bold">Oops!</h1>
       <p>Sorry, an unexpected error has occurred.</p>
-      <p>
-        <i>{error.statusText || error.message}</i>
-      </p>
+      <p>Not Found</p>
     </div>
   );
-}
+};
+
+export default ErrorPage;

@@ -1,4 +1,3 @@
-// src/routes/Login.jsx
 import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -13,15 +12,15 @@ function Login() {
   const { data, loading, error, fetchData } = useFetch();
 
   useEffect(() => {
-    if (data) {
-      login(data.token);
-      navigate('/workspaces');
+    if (data && data.jwt) {
+      login(data.jwt);
+      navigate('/home');
     }
   }, [data, login, navigate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    fetchData('https://api.example.com/login', {
+    fetchData('http://localhost:8080/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

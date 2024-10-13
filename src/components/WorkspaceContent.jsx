@@ -1,11 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
 import useModal from '../hooks/useModal';
 import TaskCard from '../components/TaskCard';
+import useFetch from '../hooks/useFetch';
 import { BiDotsVerticalRounded } from 'react-icons/bi';
+import TaskList from './TaskList';
 
-const WorkspaceContent = () => {
-  const [tasks] = useState([
+const WorkspaceContent = ({ idWorkspace }) => {
+  const [tasks, setTasks] = useState([
     {
       title: 'Design UI Presentation',
       status: 'progress',
@@ -40,7 +42,7 @@ const WorkspaceContent = () => {
 
   const [menuOpenTask, setMenuOpenTask] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
-  const menuRef = useRef(null);
+  const { data, loading, error, fetchData } = useFetch();
 
   const {
     isOpen: isEditOpen,
@@ -54,6 +56,29 @@ const WorkspaceContent = () => {
     closeModal: closeDeleteModal,
   } = useModal();
 
+  useEffect(() => {
+    if (idWorkspace) {
+      // Lógica para obtener las listas del workspace correspondiente
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        fetchData(`http://localhost:8080/api/lists/workspace/${idWorkspace}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    }
+  }, [idWorkspace, fetchData]);
+
+  useEffect(() => {
+    // Este useEffect se asegura de ejecutar cuando los datos se hayan actualizado
+    if (data && Array.isArray(data.data)) {
+      console.log("Llegaron las listas:", data.data);
+    }
+  }, [data]);
+
   const toggleMenu = (task) => {
     setMenuOpenTask((prev) => (prev === task ? null : task));
   };
@@ -61,19 +86,6 @@ const WorkspaceContent = () => {
   const closeMenu = () => {
     setMenuOpenTask(null);
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        closeMenu();
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   const handleEditTask = (task) => {
     setSelectedTask(task);
@@ -89,52 +101,49 @@ const WorkspaceContent = () => {
 
   return (
     <main className="flex-1 p-6 overflow-x-auto">
+      {loading && <p className="text-sm text-gray-400">Cargando listas...</p>}
+      {error && <p className="text-sm text-red-500">Error: {error}</p>}
       {/* Contenedor con desplazamiento horizontal para listas de tareas */}
       <div className="flex space-x-6 pb-6">
-        {/* Renderizar cada sección de tareas */}
-        {['To Do', 'In Progress', 'Done', 'Review', 'Pending Approval', 'On Hold'].map((list) => (
-          <div key={list} className="flex-shrink-0 w-80 relative">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">{list}</h3>
-              <div className="relative">
-                <button
-                  onClick={() => toggleMenu(list)}
-                  className="text-gray-400 hover:text-white focus:outline-none"
-                >
-                  <BiDotsVerticalRounded />
-                </button>
-                {menuOpenTask === list && (
-                  <div
-                    ref={menuRef}
-                    className="absolute top-8 right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-10"
+        {/* Renderizar cada sección de listas */}
+        {data?.data && Array.isArray(data.data) ? (
+          data.data.map((list) => (
+            <div key={list.id + " list"} className="flex-shrink-0 w-80 relative">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">{list.title}</h3>
+                <div className="relative">
+                  <button
+                    onClick={() => toggleMenu(list)}
+                    className="text-gray-400 hover:text-white focus:outline-none"
                   >
-                    <ul className="py-2">
-                      <li
-                        className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                        onClick={() => handleEditTask(list)}
-                      >
-                        Editar
-                      </li>
-                      <li
-                        className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                        onClick={() => handleDeleteTask(list)}
-                      >
-                        Eliminar
-                      </li>
-                    </ul>
-                  </div>
-                )}
+                    <BiDotsVerticalRounded />
+                  </button>
+                  {menuOpenTask === list && (
+                    <div className="absolute top-8 right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-10">
+                      <ul className="py-2">
+                        <li
+                          className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
+                          onClick={() => handleEditTask(list)}
+                        >
+                          Editar
+                        </li>
+                        <li
+                          className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
+                          onClick={() => handleDeleteTask(list)}
+                        >
+                          Eliminar
+                        </li>
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
+              <TaskList key={list.id + " listId " + list.title} listId={list.id}/>
             </div>
-            <div className="space-y-4">
-              {tasks
-                .filter((task) => task.list === list)
-                .map((task, index) => (
-                  <TaskCard key={index} task={task} />
-                ))}
-            </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <p>No se encontraron listas</p>
+        )}
       </div>
 
       {/* Modal de Edición de Tarea */}

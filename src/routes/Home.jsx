@@ -1,30 +1,88 @@
-import { BiPlus, BiDotsVerticalRounded } from 'react-icons/bi';
+import { BiPlus } from 'react-icons/bi';
 import Sidebar from '../components/Sidebar';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import useModal from '../hooks/useModal';
-import Modal from '../components/Modal';
 import WorkspaceContent from '../components/WorkspaceContent';
+import { useAuth } from '../AuthContext';
+import useFetch from '../hooks/useFetch'; // Importar el hook personalizado
+import { v4 as uuidv4 } from 'uuid'; // Importar uuid para generar códigos de acceso
+import WorkspacesList from '../components/Workspaces/WorkspacesList';
+import WorkspaceHeader from '../components/Workspaces/WorkspaceHeader';
+import ModalCreateWorkspace from '../components/Workspaces/ModalCreateWorkspace';
+import ModalEditWorkspace from '../components/Workspaces/ModalEditWorkspace';
+import Modal from '../components/Modal'; // Modal reutilizable
 
 function Home() {
-  // Estados de los workspaces y las tareas
-  const [workspaces] = useState(['Project A', 'Project B', 'Project C']);
+  const { isAuthenticated, userId } = useAuth(); // Obtenemos el id del usuario del contexto de autenticación
+  const [workspaces, setWorkspaces] = useState([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [menuOpenWorkspace, setMenuOpenWorkspace] = useState(null);
+  const [newWorkspace, setNewWorkspace] = useState({
+    nameWorkspace: '',
+    descriptionWorkspace: '',
+    typeWorkspace: 'PRIVATE',
+  });
+  const [editWorkspace, setEditWorkspace] = useState({
+    nameWorkspace: '',
+    descriptionWorkspace: '',
+    typeWorkspace: 'PRIVATE',
+    accessCode: '',
+  });
 
   const { isOpen: isCreateOpen, openModal: openCreateModal, closeModal: closeCreateModal } = useModal();
   const { isOpen: isEditOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();
   const { isOpen: isDeleteOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
 
+  const { data, loading, error, fetchData } = useFetch();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      const token = localStorage.getItem('authToken'); // Obtenemos el token desde localStorage
+      fetchData(`http://localhost:8080/api/workspaces/user/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`, // Incluimos el token en el header
+        },
+      });
+    }
+  }, [isAuthenticated, userId, fetchData]);
+
+  useEffect(() => {
+    if (Array.isArray(data?.data)) {
+      setWorkspaces(data?.data);
+      setSelectedWorkspace(data?.data[data?.data.length - 1]);
+    }
+  }, [data, userId]);
+
   const handleEditWorkspace = (workspace) => {
+    setEditWorkspace({
+      nameWorkspace: workspace.nameWorkspace,
+      descriptionWorkspace: workspace.descriptionWorkspace,
+      typeWorkspace: workspace.typeWorkspace,
+      accessCode: workspace.accessCode,
+    });
     setSelectedWorkspace(workspace);
-    closeMenu(); // Cerramos el menú antes de abrir el modal
+    closeMenu();
     openEditModal();
   };
 
-  const handleDeleteWorkspace = (workspace) => {
-    setSelectedWorkspace(workspace);
-    closeMenu(); // Cerramos el menú antes de abrir el modal
-    openDeleteModal();
+  const handleDeleteWorkspace = async () => {
+    const token = localStorage.getItem('authToken');
+    try {
+      await fetch(`http://localhost:8080/api/workspaces/${selectedWorkspace.idWorkspace}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setWorkspaces(workspaces.filter(workspace => workspace.idWorkspace !== selectedWorkspace.idWorkspace));
+      setSelectedWorkspace(workspaces.length > 1 ? workspaces[0] : null);
+      closeDeleteModal();
+    } catch (err) {
+      console.error('Error al eliminar el workspace:', err);
+    }
   };
 
   const toggleMenu = (workspace) => {
@@ -35,48 +93,109 @@ function Home() {
     setMenuOpenWorkspace(null);
   };
 
+  const handleCreateWorkspace = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('authToken');
+    const accessCode = uuidv4().slice(0, 8); // Generar un código de acceso aleatorio de 8 caracteres
+
+    const workspaceData = {
+      ...newWorkspace,
+      accessCode,
+    };
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/workspaces/user/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(workspaceData),
+      });
+      const createdWorkspace = await response.json();
+      setWorkspaces((prevWorkspaces) => [...prevWorkspaces, createdWorkspace.data]);
+      setSelectedWorkspace(createdWorkspace.data);
+      closeCreateModal();
+    } catch (err) {
+      console.error('Error al crear el workspace:', err);
+    }
+  };
+
+  const handleUpdateWorkspace = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('authToken');
+  
+    // Guardar el ID del workspace actual
+    const currentWorkspaceId = selectedWorkspace.idWorkspace;
+  
+    try {
+      // Actualizar el workspace
+      const updateResponse = await fetch(`http://localhost:8080/api/workspaces/${currentWorkspaceId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(editWorkspace),
+      });
+  
+      if (!updateResponse.ok) {
+        throw new Error('Failed to update workspace');
+      }
+  
+      // Obtener el workspace actualizado
+      const updatedWorkspaceResponse = await fetch(`http://localhost:8080/api/workspaces/${currentWorkspaceId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (!updatedWorkspaceResponse.ok) {
+        throw new Error('Failed to fetch updated workspace');
+      }
+  
+      const updatedWorkspace = await updatedWorkspaceResponse.json();
+  
+      // Actualizar el estado local
+      setWorkspaces(prevWorkspaces => 
+        prevWorkspaces.map(workspace => 
+          workspace.idWorkspace === currentWorkspaceId ? updatedWorkspace.data : workspace
+        )
+      );
+      setSelectedWorkspace(updatedWorkspace.data);
+  
+      // Cerrar el modal
+      closeEditModal();
+  
+    } catch (err) {
+      console.error('Error al actualizar el workspace:', err);
+      // Aquí podrías manejar el error, por ejemplo, mostrando un mensaje al usuario
+    }
+  };
+
+
   return (
     <div className="flex min-h-screen bg-gray-900 text-white overflow-hidden w-full">
       <Sidebar />
-      {/* Workspaces del Usuario */}
+
       <div className="w-64 flex-shrink-0 p-4 bg-gray-850 border-r border-gray-700">
         <h2 className="text-xl font-semibold mb-4">Mis Workspaces</h2>
-        <ul className="space-y-3">
-          {workspaces.map((workspace, index) => (
-            <li key={index} className="relative p-3 bg-gray-700 rounded-md flex items-center justify-between">
-              <span>{workspace}</span>
-              <button
-                onClick={() => toggleMenu(workspace)}
-                className="text-gray-400 hover:text-white focus:outline-none ml-2"
-              >
-                <BiDotsVerticalRounded />
-              </button>
 
-              {/* Menú desplegable */}
-              {menuOpenWorkspace === workspace && (
-                <div
-                  className="absolute top-0 right-0 mt-10 w-40 bg-gray-800 rounded-md shadow-lg z-10"
-                  onMouseLeave={closeMenu} // Ocultar el menú al dejar de estar sobre él
-                >
-                  <ul className="py-2">
-                    <li
-                      className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                      onClick={() => handleEditWorkspace(workspace)}
-                    >
-                      Editar
-                    </li>
-                    <li
-                      className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
-                      onClick={() => handleDeleteWorkspace(workspace)}
-                    >
-                      Eliminar
-                    </li>
-                  </ul>
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
+        {loading && <p className="text-sm text-gray-400">Cargando workspaces...</p>}
+        {error && <p className="text-sm text-red-500">Error: {error}</p>}
+
+        <WorkspacesList
+          workspaces={workspaces}
+          selectedWorkspace={selectedWorkspace}
+          setSelectedWorkspace={setSelectedWorkspace}
+          toggleMenu={toggleMenu}
+          menuOpenWorkspace={menuOpenWorkspace}
+          handleEditWorkspace={handleEditWorkspace}
+          handleDeleteWorkspace={handleDeleteWorkspace}
+        />
+
         <div className="p-4 border-t border-gray-700 mt-4">
           <button
             className="flex items-center w-full text-left text-white bg-indigo-600 p-3 rounded-md hover:bg-indigo-700"
@@ -87,71 +206,40 @@ function Home() {
         </div>
       </div>
 
-      {/* Modal de Creación de Workspace */}
-      <Modal isOpen={isCreateOpen} onClose={closeCreateModal}>
-        <h3 className="text-xl font-semibold mb-4">Crear Nuevo Workspace</h3>
-        <form>
-          <input
-            type="text"
-            placeholder="Nombre del Workspace"
-            className="w-full p-2 rounded-md mb-4 bg-gray-700 text-white"
-          />
-          <div className="flex justify-end">
-            <button type="button" onClick={closeCreateModal} className="bg-gray-600 px-4 py-2 rounded-md mr-2">
-              Cancelar
-            </button>
-            <button type="submit" className="bg-indigo-600 px-4 py-2 rounded-md">
-              Crear
-            </button>
-          </div>
-        </form>
-      </Modal>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <WorkspaceHeader />
 
-      {/* Modal de Edición de Workspace */}
-      <Modal isOpen={isEditOpen} onClose={closeEditModal}>
-        <h3 className="text-xl font-semibold mb-4">Editar Workspace</h3>
-        <form>
-          <input
-            type="text"
-            defaultValue={selectedWorkspace}
-            className="w-full p-2 rounded-md mb-4 bg-gray-700 text-white"
-          />
-          <div className="flex justify-end">
-            <button type="button" onClick={closeEditModal} className="bg-gray-600 px-4 py-2 rounded-md mr-2">
-              Cancelar
-            </button>
-            <button type="submit" className="bg-indigo-600 px-4 py-2 rounded-md">
-              Guardar
-            </button>
-          </div>
-        </form>
-      </Modal>
+        <WorkspaceContent idWorkspace={selectedWorkspace?.idWorkspace} />
+      </div>
 
-      {/* Modal de Eliminación de Workspace */}
+      <ModalCreateWorkspace
+        isCreateOpen={isCreateOpen}
+        closeCreateModal={closeCreateModal}
+        newWorkspace={newWorkspace}
+        setNewWorkspace={setNewWorkspace}
+        handleCreateWorkspace={handleCreateWorkspace}
+      />
+
+      <ModalEditWorkspace
+        isEditOpen={isEditOpen}
+        closeEditModal={closeEditModal}
+        editWorkspace={editWorkspace}
+        setEditWorkspace={setEditWorkspace}
+        handleUpdateWorkspace={handleUpdateWorkspace}
+      />
+
       <Modal isOpen={isDeleteOpen} onClose={closeDeleteModal}>
         <h3 className="text-xl font-semibold mb-4">Eliminar Workspace</h3>
-        <p>¿Estás seguro de que deseas eliminar el workspace "{selectedWorkspace}"?</p>
+        <p>¿Estás seguro de que deseas eliminar el workspace "{selectedWorkspace?.nameWorkspace}"?</p>
         <div className="flex justify-end mt-4">
           <button type="button" onClick={closeDeleteModal} className="bg-gray-600 px-4 py-2 rounded-md mr-2">
             Cancelar
           </button>
-          <button type="button" className="bg-red-600 px-4 py-2 rounded-md">
+          <button type="button" onClick={handleDeleteWorkspace} className="bg-red-600 px-4 py-2 rounded-md">
             Eliminar
           </button>
         </div>
       </Modal>
-
-      {/* Contenido principal */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header Fijo */}
-        <header className="flex justify-between items-center p-6 bg-gray-800 shadow-md">
-          <h2 className="text-3xl font-bold">Tareas</h2>
-          <button className="bg-indigo-600 px-4 py-2 rounded-md hover:bg-indigo-700">Nueva Tarea</button>
-        </header>
-
-        {/* Área Principal con Listas de Tareas */}
-        <WorkspaceContent/>
-      </div>
     </div>
   );
 }
