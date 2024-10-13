@@ -17,6 +17,7 @@ function Home() {
   const [workspaces, setWorkspaces] = useState([]);
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [menuOpenWorkspace, setMenuOpenWorkspace] = useState(null);
+  const [reloadTrigger, setReloadTrigger] = useState(0);
   const [newWorkspace, setNewWorkspace] = useState({
     nameWorkspace: '',
     descriptionWorkspace: '',
@@ -175,6 +176,10 @@ function Home() {
     }
   };
 
+  const handleTaskCreated = () => {
+    console.log("ASDASD: "+reloadTrigger)
+    setReloadTrigger(prev => prev + 1);
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-900 text-white overflow-hidden w-full">
@@ -185,7 +190,6 @@ function Home() {
 
         {loading && <p className="text-sm text-gray-400">Cargando workspaces...</p>}
         {error && <p className="text-sm text-red-500">Error: {error}</p>}
-
         <WorkspacesList
           workspaces={workspaces}
           selectedWorkspace={selectedWorkspace}
@@ -207,9 +211,8 @@ function Home() {
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <WorkspaceHeader />
-
-        <WorkspaceContent idWorkspace={selectedWorkspace?.idWorkspace} />
+        <WorkspaceHeader  idWorkspace={selectedWorkspace?.idWorkspace} onTaskCreated={handleTaskCreated}/>
+        <WorkspaceContent reloadTrigger={reloadTrigger} idWorkspace={selectedWorkspace?.idWorkspace} />
       </div>
 
       <ModalCreateWorkspace

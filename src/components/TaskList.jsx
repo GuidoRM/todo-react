@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import useFetch from '../hooks/useFetch';
 import TaskCard from '../components/TaskCard';
 
-const TaskList = ({ listId }) => {
+const TaskList = ({ listId, reloadTrigger }) => {
   const [tasks, setTasks] = useState([]);
   const { data, loading, error, fetchData } = useFetch();
 
   useEffect(() => {
+    console.log("RELOAD_TRIGGER: " + reloadTrigger)
     if (listId) {
       const token = localStorage.getItem('authToken');
       if (token) {
@@ -19,7 +20,7 @@ const TaskList = ({ listId }) => {
         });
       }
     }
-  }, [listId, fetchData]);
+  }, [listId, reloadTrigger, fetchData]); // Agrega `reloadTrigger` como dependencia
 
   useEffect(() => {
     if (data && Array.isArray(data.data)) {
