@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import useFetch from '../hooks/useFetch';
 
 function Login() {
@@ -79,6 +79,12 @@ function Login() {
             {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
           </button>
         </form>
+        <div className="mt-4 text-center flex justify-center gap-1">
+          <p className="text-gray-300">No tienes cuenta?</p>
+          <Link to="/register" className="text-indigo-400 hover:text-indigo-300 transition">
+            Regístrate aquí
+          </Link>
+        </div>
       </div>
     </div>
   );

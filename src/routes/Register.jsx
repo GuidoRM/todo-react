@@ -12,10 +12,13 @@ function Register() {
   const { data, loading, error, fetchData } = useFetch();
   const navigate = useNavigate();
 
+  const [successMessage, setSuccessMessage] = useState('');
+
   // Cuando se obtenga la respuesta, redirigir al login
   useEffect(() => {
-    if (data) {
-      navigate('/login'); // Redirige al usuario a la página de inicio de sesión
+    if (data && data.status === 201) {
+      setSuccessMessage('Registro exitoso. Redirigiendo al login...');
+      setTimeout(() => navigate('/login'), 2000);
     }
   }, [data, navigate]);
 
@@ -27,12 +30,14 @@ function Register() {
     formData.append('lastName', lastName);
     formData.append('email', email);
     formData.append('password', password);
-    formData.append('profileImage', profileImage);
-
-    // Ejecutar la solicitud de registro usando `useFetch`
-    fetchData('http://localhost:3000/register', {
+    if (profileImage) {
+      formData.append('profileImage', profileImage);
+    }
+  
+    fetchData('http://localhost:8080/api/users', {
       method: 'POST',
       body: formData,
+      // No necesitas especificar 'Content-Type' aquí, se manejará automáticamente
     });
   };
 

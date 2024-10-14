@@ -5,13 +5,25 @@ function useFetch() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchData = useCallback(async (url, options = null) => {
+  const fetchData = useCallback(async (url, options = {}) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(url, options);
+      const defaultOptions = {
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+      const mergedOptions = { ...defaultOptions, ...options };
+
+      if (options.body instanceof FormData) {
+        delete mergedOptions.headers['Content-Type'];
+      }
+
+      const response = await fetch(url, mergedOptions);
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
       const result = await response.json();
       setData(result);
