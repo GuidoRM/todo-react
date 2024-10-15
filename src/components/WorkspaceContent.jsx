@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../components/Modal';
 import useModal from '../hooks/useModal';
-import TaskCard from '../components/TaskCard';
-import useFetch from '../hooks/useFetch';
-import { BiDotsVerticalRounded } from 'react-icons/bi';
 import TaskList from './TaskList';
+import { BiDotsVerticalRounded } from 'react-icons/bi';
 import { AiOutlinePlus } from 'react-icons/ai';
 
 const WorkspaceContent = ({ idWorkspace, reloadTrigger }) => {
   const [menuOpenList, setMenuOpenList] = useState(null);
   const [selectedList, setSelectedList] = useState(null);
-  const { data, loading, error, fetchData } = useFetch();
+  const [lists, setLists] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const {
     isOpen: isEditListOpen,
@@ -32,18 +32,38 @@ const WorkspaceContent = ({ idWorkspace, reloadTrigger }) => {
 
   useEffect(() => {
     if (idWorkspace) {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        fetchData(`http://localhost:8080/api/lists/workspace/${idWorkspace}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      }
+      const fetchLists = async () => {
+        const token = localStorage.getItem('authToken');
+        if (token) {
+          setLoading(true);
+          setError(null);
+
+          try {
+            const response = await fetch(`http://localhost:8080/api/lists/workspace/${idWorkspace}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+            });
+
+            if (!response.ok) {
+              throw new Error('Error al cargar las listas.');
+            }
+
+            const data = await response.json();
+            setLists(data?.data || []);
+          } catch (err) {
+            setError(err.message);
+          } finally {
+            setLoading(false);
+          }
+        }
+      };
+
+      fetchLists();
     }
-  }, [idWorkspace, fetchData]);
+  }, [idWorkspace, reloadTrigger]);
 
   const toggleMenu = (list) => {
     setMenuOpenList((prev) => (prev === list ? null : list));
@@ -150,16 +170,32 @@ const WorkspaceContent = ({ idWorkspace, reloadTrigger }) => {
     }
   };
 
-  const refreshLists = () => {
+  const refreshLists = async () => {
     const token = localStorage.getItem('authToken');
     if (token) {
-      fetchData(`http://localhost:8080/api/lists/workspace/${idWorkspace}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch(`http://localhost:8080/api/lists/workspace/${idWorkspace}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Error al cargar las listas.');
+        }
+
+        const data = await response.json();
+        setLists(data?.data || []);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -168,10 +204,10 @@ const WorkspaceContent = ({ idWorkspace, reloadTrigger }) => {
       {loading && <p className="text-sm text-gray-400">Cargando listas...</p>}
       {error && <p className="text-sm text-red-500">Error: {error}</p>}
       <div className="flex space-x-6 pb-6">
-        {data?.data && Array.isArray(data.data) ? (
+        {lists && lists.length > 0 ? (
           <>
-            {data.data.map((list) => (
-              <div key={list.id + " list"} className="flex-shrink-0 w-80 relative">
+            {lists.map((list) => (
+              <div key={list.id} className="flex-shrink-0 w-80 relative">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-xl font-semibold">{list.title}</h3>
                   <div className="relative">
@@ -201,10 +237,13 @@ const WorkspaceContent = ({ idWorkspace, reloadTrigger }) => {
                     )}
                   </div>
                 </div>
-                <TaskList key={list.id + " listId " + list.title} listId={list.id} reloadTrigger={reloadTrigger} />
+                <TaskList key={list.id} listId={list.id} reloadTrigger={reloadTrigger} />
               </div>
             ))}
-            <div className="flex-shrink-0 w-80 h-[150px] mt-[2.8rem] border-2 border-dashed border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors duration-300" onClick={openAddListModal}>
+            <div
+              className="flex-shrink-0 w-80 h-[150px] mt-[2.8rem] border-2 border-dashed border-gray-600 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-gray-400 transition-colors duration-300"
+              onClick={openAddListModal}
+            >
               <AiOutlinePlus className="text-4xl text-gray-600 mb-2" />
               <span className="text-gray-600 text-lg">Agregar lista</span>
             </div>

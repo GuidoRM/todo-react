@@ -64,9 +64,10 @@ const TaskCard = ({ task, onDeleteTask, onUpdateTask }) => {
 
   const handleSaveClick = async () => {
     const updatedTask = { ...editedTask, attachments };
-    await onUpdateTask(updatedTask);
+    await onUpdateTask(updatedTask); // Enviar la tarea actualizada
     setIsEditing(false);
   };
+  
 
   const handleCancelClick = () => {
     setIsEditing(false);
@@ -100,10 +101,11 @@ const TaskCard = ({ task, onDeleteTask, onUpdateTask }) => {
   const handleDeleteClick = (e) => {
     e.stopPropagation();
     if (onDeleteTask) {
-      onDeleteTask(task.id);
+      onDeleteTask(task.id);  // Llama a la función de eliminación con el ID de la tarea
     }
     setShowMenu(false);
   };
+  
 
   const handleTaskClick = () => {
     setSelectedTask(task);
