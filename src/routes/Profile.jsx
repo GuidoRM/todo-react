@@ -16,6 +16,9 @@ function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [previewImage, setPreviewImage] = useState(null);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -52,11 +55,21 @@ function Profile() {
 
   const handleEditProfile = async (e) => {
     e.preventDefault();
+
+    if (password !== confirmPassword) {
+      setPasswordError('Las contraseñas no coinciden.');
+      return;
+    }
+
     const token = localStorage.getItem('authToken');
     const formData = new FormData();
     formData.append('firstName', userProfile.firstName || '');
     formData.append('lastName', userProfile.lastName || '');
     formData.append('email', userProfile.email || '');
+
+    if (password) {
+      formData.append('password', password);
+    }
 
     if (userProfile.profileImage instanceof File) {
       formData.append('profileImage', userProfile.profileImage);
@@ -75,6 +88,9 @@ function Profile() {
         const updatedUser = await response.json();
         setUserProfile(updatedUser.data);
         setIsEditing(false);
+        setPassword('');
+        setConfirmPassword('');
+        setPasswordError('');
       } else {
         const errorData = await response.json();
         console.error('Error updating profile:', errorData);
@@ -141,6 +157,17 @@ function Profile() {
                     className="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">Nueva Contraseña</label>
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 block w-full bg-gray-700 rounded-md bg-gray-70 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">Confirmar Nueva Contraseña</label>
+                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white" />
+                </div>
+                {passwordError && (
+                  <p className="text-red-500 text-sm">{passwordError}</p>
+                )}
                 <div>
                   {previewImage ? (
                     <img

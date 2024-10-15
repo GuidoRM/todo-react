@@ -1,12 +1,13 @@
 // src/components/Sidebar.jsx
 import { useState } from 'react';
-import { FaHome, FaUserEdit, FaBars } from 'react-icons/fa';
+import { FaHome, FaUserEdit, FaBars, FaSignOutAlt } from 'react-icons/fa';
 import SidebarLink from './SidebarLink';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 function Sidebar() {
   const [isNavMinimized, setIsNavMinimized] = useState(true);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Función para alternar el estado del navbar (minimizado/expandido)
   const toggleNav = () => {
@@ -15,6 +16,10 @@ function Sidebar() {
 
   const isActiveRoute = (route) => {
     return location.pathname === route;
+  }
+
+  const handleLogout = () => {
+    navigate('/login');
   }
 
   return (
@@ -54,6 +59,13 @@ function Sidebar() {
           />
         </li>
       </ul>
+
+      <div className="mt-auto">
+        <button onClick={handleLogout} className={`w-full flex items-center ${isNavMinimized ? 'justify-center' : 'justify-start'} p-2 text-white hover:bg-gray-700 rounded transitions-colors`} >
+          <FaSignOutAlt className={`$ {isNavMinimized ? 'mr-0' : 'mr-4'}`} />
+          {!isNavMinimized && <span className="ml-3"> Cerrar Sesión</span>}
+        </button>
+      </div>
     </nav>
   );
 }
