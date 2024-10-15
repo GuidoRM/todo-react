@@ -38,6 +38,7 @@ const TaskCard = ({ task, onDeleteTask, onUpdateTask }) => {
 
         const data = await response.json();
         if (data.status === 200) {
+          console.log("Etiquetas recibidas:", data.data);
           setLabels(data.data);
         } else {
           console.error('Error en la respuesta del servidor:', data);
@@ -226,7 +227,7 @@ const TaskCard = ({ task, onDeleteTask, onUpdateTask }) => {
               editedTask.due_Date[2],
               editedTask.due_Date[3],
               editedTask.due_Date[4]
-            ).toISOSTring().slice(0, 16) : ''} 
+            ).toISOString().slice(0, 16) : ''} 
             onChange={handleInputChange} 
             className="mt-1 block w-full rounded-md bg-gray-700 text-white shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200"
           />

@@ -1,7 +1,6 @@
 // src/routes/Register.jsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useFetch from '../hooks/useFetch';
 
 function Register() {
   const [firstName, setFirstName] = useState('');
@@ -9,22 +8,16 @@ function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [profileImage, setProfileImage] = useState(null);
-  const { data, loading, error, fetchData } = useFetch();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
 
-  const [successMessage, setSuccessMessage] = useState('');
-
-  // Cuando se obtenga la respuesta, redirigir al login
-  useEffect(() => {
-    if (data && data.status === 201) {
-      setSuccessMessage('Registro exitoso. Redirigiendo al login...');
-      setTimeout(() => navigate('/login'), 2000);
-    }
-  }, [data, navigate]);
-
-  // Manejar el envío del formulario
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+
     const formData = new FormData();
     formData.append('firstName', firstName);
     formData.append('lastName', lastName);
@@ -33,12 +26,29 @@ function Register() {
     if (profileImage) {
       formData.append('profileImage', profileImage);
     }
-  
-    fetchData('http://localhost:8080/api/users', {
-      method: 'POST',
-      body: formData,
-      // No necesitas especificar 'Content-Type' aquí, se manejará automáticamente
-    });
+
+    try {
+      const response = await fetch('http://localhost:8080/api/users', {
+        method: 'POST',
+        body: formData,
+        // No es necesario especificar 'Content-Type' para FormData
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Respuesta del servidor:', data);
+
+      setSuccessMessage('Registro exitoso. Redirigiendo al login...');
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err) {
+      console.error('Error durante el registro:', err);
+      setError(err.message || 'Ocurrió un error durante el registro');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

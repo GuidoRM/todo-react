@@ -1,15 +1,21 @@
 // src/components/Sidebar.jsx
 import { useState } from 'react';
-import { FaTachometerAlt, FaProjectDiagram, FaTasks, FaBell, FaBars } from 'react-icons/fa';
+import { FaHome, FaUserEdit, FaBars } from 'react-icons/fa';
 import SidebarLink from './SidebarLink';
+import { useLocation } from 'react-router-dom';
 
 function Sidebar() {
   const [isNavMinimized, setIsNavMinimized] = useState(true);
+  const location = useLocation();
 
   // Función para alternar el estado del navbar (minimizado/expandido)
   const toggleNav = () => {
     setIsNavMinimized(!isNavMinimized);
   };
+
+  const isActiveRoute = (route) => {
+    return location.pathname === route;
+  }
 
   return (
     <nav
@@ -31,34 +37,20 @@ function Sidebar() {
       <ul className="space-y-6">
         <li>
           <SidebarLink
-            to="/dashboard"
-            icon={FaTachometerAlt}
-            label="Dashboard"
+            to="/home"
+            icon={FaHome}
+            label="Home"
             isNavMinimized={isNavMinimized}
+            isActive={isActiveRoute('/home')}
           />
         </li>
         <li>
           <SidebarLink
-            to="/projects"
-            icon={FaProjectDiagram}
-            label="Workspaces"
+            to="/profile"
+            icon={FaUserEdit}
+            label="Editar Perfil"
             isNavMinimized={isNavMinimized}
-          />
-        </li>
-        <li>
-          <SidebarLink
-            to="/tasks"
-            icon={FaTasks}
-            label="Tareas"
-            isNavMinimized={isNavMinimized}
-          />
-        </li>
-        <li>
-          <SidebarLink
-            to="/notifications"
-            icon={FaBell}
-            label="Notificaciones"
-            isNavMinimized={isNavMinimized}
+            isActive={isActiveRoute('/profile')}
           />
         </li>
       </ul>
