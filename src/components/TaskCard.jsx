@@ -149,31 +149,32 @@ const TaskCard = ({ task, onDeleteTask, onUpdateTask }) => {
         }
       };
       reader.readAsDataURL(file);
-      const handleRemoveAttachment = async (id) => {
-        try {
-          await deleteAttachment(id);
-          setAttachments(prev => prev.filter(attachment => attachment.id !== id));
-        } catch (error) {
-          console.error('Error deleting attachment:', error);
-        }
-      };
+    }
+  };
 
-      const handleEditAttachmentName = async (id, newName) => {
-        try {
-          const attachmentToUpdate = attachments.find(att => att.id === id);
-          if (attachmentToUpdate) {
-            const updatedAttachment = await updateAttachment(id, {
-              ...attachmentToUpdate,
-              fileName: newName
-            });
-            setAttachments(prev => prev.map(attachment =>
-              attachment.id === id ? updatedAttachment : attachment
-            ));
-          }
-        } catch (error) {
-          console.error('Error updating attachment:', error);
-        }
-      };
+  const handleRemoveAttachment = async (id) => {
+    try {
+      await deleteAttachment(id);
+      setAttachments(prev => prev.filter(attachment => attachment.id !== id));
+    } catch (error) {
+      console.error('Error deleting attachment:', error);
+    }
+  };
+
+  const handleEditAttachmentName = async (id, newName) => {
+    try {
+      const attachmentToUpdate = attachments.find(att => att.id === id);
+      if (attachmentToUpdate) {
+        const updatedAttachment = await updateAttachment(id, {
+          ...attachmentToUpdate,
+          fileName: newName
+        });
+        setAttachments(prev => prev.map(attachment =>
+          attachment.id === id ? updatedAttachment : attachment
+        ));
+      }
+    } catch (error) {
+      console.error('Error updating attachment:', error);
     }
   };
 

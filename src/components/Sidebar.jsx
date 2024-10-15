@@ -1,8 +1,11 @@
 // src/components/Sidebar.jsx
 import { useState } from 'react';
-import { FaHome, FaUserEdit, FaBars, FaSignOutAlt } from 'react-icons/fa';
+import { FaHome, FaUserEdit, FaUser, FaBars, FaSignOutAlt } from 'react-icons/fa';
+import { BiSolidDashboard } from "react-icons/bi";
 import SidebarLink from './SidebarLink';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { BsLayoutSidebarInsetReverse } from "react-icons/bs";
+import { BsLayoutSidebarInset } from "react-icons/bs";
 
 function Sidebar() {
   const [isNavMinimized, setIsNavMinimized] = useState(true);
@@ -32,9 +35,9 @@ function Sidebar() {
       <div className="flex justify-center mb-6">
         <button
           onClick={toggleNav}
-          className="text-xl text-white focus:outline-none"
+          className="text-xl text-white focus:outline-none flex gap-4 justify-center items-center font-bold"
         >
-          <FaBars />
+          {isNavMinimized ? <BsLayoutSidebarInsetReverse/> : <>TODO APP  <BsLayoutSidebarInset className='mt-[1px]'/></>}
         </button>
       </div>
 
@@ -43,7 +46,7 @@ function Sidebar() {
         <li>
           <SidebarLink
             to="/home"
-            icon={FaHome}
+            icon={BiSolidDashboard}
             label="Home"
             isNavMinimized={isNavMinimized}
             isActive={isActiveRoute('/home')}
@@ -52,7 +55,7 @@ function Sidebar() {
         <li>
           <SidebarLink
             to="/profile"
-            icon={FaUserEdit}
+            icon={FaUser}
             label="Editar Perfil"
             isNavMinimized={isNavMinimized}
             isActive={isActiveRoute('/profile')}
@@ -61,7 +64,7 @@ function Sidebar() {
       </ul>
 
       <div className="mt-auto">
-        <button onClick={handleLogout} className={`w-full flex items-center ${isNavMinimized ? 'justify-center' : 'justify-start'} p-2 text-white hover:bg-gray-700 rounded transitions-colors`} >
+        <button onClick={handleLogout} className={`w-full sticky flex items-center ${isNavMinimized ? 'justify-center' : 'justify-start'} p-2 text-white hover:bg-gray-700 rounded transitions-colors`} >
           <FaSignOutAlt className={`$ {isNavMinimized ? 'mr-0' : 'mr-4'}`} />
           {!isNavMinimized && <span className="ml-3"> Cerrar Sesión</span>}
         </button>

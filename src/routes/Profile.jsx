@@ -130,45 +130,7 @@ function Profile() {
           <div className="w-full max-w-md">
             {isEditing ? (
               <form onSubmit={handleEditProfile} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">Nombre</label>
-                  <input
-                    type="text"
-                    value={userProfile.firstName || ''}
-                    onChange={(e) => setUserProfile({ ...userProfile, firstName: e.target.value })}
-                    className="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">Apellido</label>
-                  <input
-                    type="text"
-                    value={userProfile.lastName || ''}
-                    onChange={(e) => setUserProfile({ ...userProfile, lastName: e.target.value })}
-                    className="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">Email</label>
-                  <input
-                    type="email"
-                    value={userProfile.email || ''}
-                    onChange={(e) => setUserProfile({ ...userProfile, email: e.target.value })}
-                    className="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">Nueva Contraseña</label>
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 block w-full bg-gray-700 rounded-md bg-gray-70 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">Confirmar Nueva Contraseña</label>
-                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white" />
-                </div>
-                {passwordError && (
-                  <p className="text-red-500 text-sm">{passwordError}</p>
-                )}
-                <div>
+                <div className='flex flex-col justify-center items-center'>
                   {previewImage ? (
                     <img
                       src={previewImage}
@@ -197,7 +159,47 @@ function Profile() {
                       hover:file:bg-indigo-700"
                   />
                 </div>
-                <div className="flex justify-end space-x-2">
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">Nombre</label>
+                  <input
+                    type="text"
+                    value={userProfile.firstName || ''}
+                    onChange={(e) => setUserProfile({ ...userProfile, firstName: e.target.value })}
+                    className="mt-1 p-2 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">Apellido</label>
+                  <input
+                    type="text"
+                    value={userProfile.lastName || ''}
+                    onChange={(e) => setUserProfile({ ...userProfile, lastName: e.target.value })}
+                    className="mt-1 p-2 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">Email</label>
+                  <input
+                    type="email"
+                    value={userProfile.email || ''}
+                    onChange={(e) => setUserProfile({ ...userProfile, email: e.target.value })}
+                    className="mt-1 p-2 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">Nueva Contraseña</label>
+                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 block p-2 w-full bg-gray-700 rounded-md bg-gray-70 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300">Confirmar Nueva Contraseña</label>
+                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="mt-1 p-2 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white" />
+                </div>
+                {passwordError && (
+                  <p className="text-red-500 text-sm">{passwordError}</p>
+                )}
+                
+                <div className="flex justify-between space-x-2">
                   <button
                     type="button"
                     onClick={() => setIsEditing(false)}
