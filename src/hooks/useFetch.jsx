@@ -10,7 +10,6 @@ function useFetch() {
     setError(null);
     try {
       const defaultOptions = {
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },

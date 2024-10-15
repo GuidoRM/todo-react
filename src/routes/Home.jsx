@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import useModal from '../hooks/useModal';
 import WorkspaceContent from '../components/WorkspaceContent';
 import { useAuth } from '../AuthContext';
-import useFetch from '../hooks/useFetch'; // Importar el hook personalizado
 import { v4 as uuidv4 } from 'uuid'; // Importar uuid para generar códigos de acceso
 import WorkspacesList from '../components/Workspaces/WorkspacesList';
 import WorkspaceHeader from '../components/Workspaces/WorkspaceHeader';
@@ -29,32 +28,48 @@ function Home() {
     typeWorkspace: 'PRIVATE',
     accessCode: '',
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const { isOpen: isCreateOpen, openModal: openCreateModal, closeModal: closeCreateModal } = useModal();
   const { isOpen: isEditOpen, openModal: openEditModal, closeModal: closeEditModal } = useModal();
   const { isOpen: isDeleteOpen, openModal: openDeleteModal, closeModal: closeDeleteModal } = useModal();
 
-  const { data, loading, error, fetchData } = useFetch();
-
   useEffect(() => {
-    if (isAuthenticated) {
-      const token = localStorage.getItem('authToken'); // Obtenemos el token desde localStorage
-      fetchData(`http://localhost:8080/api/workspaces/user/${userId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, // Incluimos el token en el header
-        },
-      });
-    }
-  }, [isAuthenticated, userId, fetchData]);
+    const fetchWorkspaces = async () => {
+      if (isAuthenticated) {
+        const token = localStorage.getItem('authToken'); // Obtenemos el token desde localStorage
+        setLoading(true);
+        setError(null);
 
-  useEffect(() => {
-    if (Array.isArray(data?.data)) {
-      setWorkspaces(data?.data);
-      setSelectedWorkspace(data?.data[data?.data.length - 1]);
-    }
-  }, [data, userId]);
+        try {
+          const response = await fetch(`http://localhost:8080/api/workspaces/user/${userId}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`, // Incluimos el token en el header
+            },
+          });
+
+          if (!response.ok) {
+            throw new Error('Error al cargar los workspaces.');
+          }
+
+          const data = await response.json();
+          if (Array.isArray(data?.data)) {
+            setWorkspaces(data?.data);
+            setSelectedWorkspace(data?.data[data?.data.length - 1]);
+          }
+        } catch (error) {
+          setError(error.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchWorkspaces();
+  }, [isAuthenticated, userId]);
 
   const handleEditWorkspace = (workspace) => {
     setEditWorkspace({
@@ -125,13 +140,10 @@ function Home() {
   const handleUpdateWorkspace = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('authToken');
-  
-    // Guardar el ID del workspace actual
     const currentWorkspaceId = selectedWorkspace.idWorkspace;
   
     try {
-      // Actualizar el workspace
-      const updateResponse = await fetch(`http://localhost:8080/api/workspaces/${currentWorkspaceId}`, {
+      await fetch(`http://localhost:8080/api/workspaces/${currentWorkspaceId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -139,12 +151,7 @@ function Home() {
         },
         body: JSON.stringify(editWorkspace),
       });
-  
-      if (!updateResponse.ok) {
-        throw new Error('Failed to update workspace');
-      }
-  
-      // Obtener el workspace actualizado
+
       const updatedWorkspaceResponse = await fetch(`http://localhost:8080/api/workspaces/${currentWorkspaceId}`, {
         method: 'GET',
         headers: {
@@ -153,31 +160,20 @@ function Home() {
         },
       });
   
-      if (!updatedWorkspaceResponse.ok) {
-        throw new Error('Failed to fetch updated workspace');
-      }
-  
       const updatedWorkspace = await updatedWorkspaceResponse.json();
-  
-      // Actualizar el estado local
       setWorkspaces(prevWorkspaces => 
         prevWorkspaces.map(workspace => 
           workspace.idWorkspace === currentWorkspaceId ? updatedWorkspace.data : workspace
         )
       );
       setSelectedWorkspace(updatedWorkspace.data);
-  
-      // Cerrar el modal
       closeEditModal();
-  
     } catch (err) {
       console.error('Error al actualizar el workspace:', err);
-      // Aquí podrías manejar el error, por ejemplo, mostrando un mensaje al usuario
     }
   };
 
   const handleTaskCreated = () => {
-    console.log("ASDASD: "+reloadTrigger)
     setReloadTrigger(prev => prev + 1);
   };
 
