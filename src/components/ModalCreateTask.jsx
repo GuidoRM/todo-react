@@ -14,6 +14,7 @@ const ModalCreateTask = ({ isOpen, onClose, idWorkspace, onTaskCreated, setIsMod
   const [labels, setLabels] = useState([]);
   const [selectedLabels, setSelectedLabels] = useState([]);
   const [newLabel, setNewLabel] = useState({ title: '', colorHex: '#000000' });
+  const [editingLabel, setEditingLabel] = useState(null);
 
   useEffect(() => {
     if (idWorkspace) {
@@ -107,7 +108,7 @@ const ModalCreateTask = ({ isOpen, onClose, idWorkspace, onTaskCreated, setIsMod
   const formatDate = (dateString) => {
     if (!dateString) return null;
     const date = new Date(dateString);
-    return date.toISOString(); // Esto devolverá la fecha en formato ISO 8601
+    return date.toISOString();
   };
 
   const handleCreateTask = async (taskData) => {
@@ -115,12 +116,11 @@ const ModalCreateTask = ({ isOpen, onClose, idWorkspace, onTaskCreated, setIsMod
       const token = localStorage.getItem('authToken');
       if (!token) {
         console.error('No se encontró el token de autenticación');
-        // Muestra un mensaje al usuario sobre el problema de autenticación
         return;
       }
-  
+
       console.log('Datos de la tarea a enviar:', JSON.stringify(taskData, null, 2));
-  
+
       const response = await fetch('http://localhost:8080/api/tasks', {
         method: 'POST',
         headers: {
@@ -129,40 +129,118 @@ const ModalCreateTask = ({ isOpen, onClose, idWorkspace, onTaskCreated, setIsMod
         },
         body: JSON.stringify(taskData)
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         console.error('Error en la respuesta del servidor:', data);
-        // Muestra un mensaje al usuario con los detalles del error
         return;
       }
-  
+
       console.log('Respuesta del servidor:', data);
-  
+
       if (data.status === 201) {
         const createdTaskId = data.data.id;
-        
-        // ... (código para vincular etiquetas sin cambios)
-  
+
+        for (const labelId of selectedLabels) {
+          await fetch(`http://localhost:8080/api/labels/${labelId}/tasks/${createdTaskId}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        }
+
         setIsModalOpen(false);
         onTaskCreated();
       } else {
         console.error('La creación de la tarea no devolvió el estado esperado:', data.status);
-        // Muestra un mensaje al usuario sobre el problema
       }
     } catch (error) {
       console.error('Error al crear la tarea:', error);
-      // Muestra un mensaje al usuario sobre el error
     }
   };
 
   const toggleLabelSelection = (labelId) => {
-    setSelectedLabels(prev => 
+    setSelectedLabels(prev =>
       prev.includes(labelId) ? prev.filter(id => id !== labelId) : [...prev, labelId]
     );
   };
 
+  const handleDeleteSelectedLabels = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!selectedLabels.length) {
+      console.error('No labels selected for deletion.');
+      return;
+    }
+
+    try {
+      for (const labelId of selectedLabels) {
+        const response = await fetch(`http://localhost:8080/api/labels/${labelId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error(`Error deleting label with ID ${labelId}`);
+        }
+      }
+
+      setLabels(prevLabels => prevLabels.filter(label => !selectedLabels.includes(label.id)));
+      setSelectedLabels([]);
+    } catch (error) {
+      console.error('Error deleting labels:', error);
+    }
+  };
+
+  const startEditingLabel = (labelId) => {
+    const labelToEdit = labels.find(label => label.id === labelId);
+    setEditingLabel(labelToEdit);
+  };
+
+  const handleEditLabel = async () => {
+    const token = localStorage.getItem('authToken');
+    if (!editingLabel) {
+      console.error('No label selected for editing.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/labels/${editingLabel.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: editingLabel.title,
+          colorHex: editingLabel.colorHex
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error updating label');
+      }
+
+      const updatedLabel = await response.json();
+
+      // Actualizar la lista de etiquetas para reflejar los cambios de inmediato
+      setLabels(prevLabels => prevLabels.map(label =>
+        label.id === updatedLabel.data.id ? updatedLabel.data : label
+      ));
+
+      // Limpia la etiqueta en edición
+      setEditingLabel(null);
+
+    } catch (error) {
+      console.error('Error updating label:', error);
+    }
+  };
+
+
+  const [, updateState] = useState();
+  const forceUpdate = React.useCallback(() => updateState({}), []);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -241,17 +319,66 @@ const ModalCreateTask = ({ isOpen, onClose, idWorkspace, onTaskCreated, setIsMod
           </select>
         </div>
 
+        {/* Lista de etiquetas */}
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700">Etiquetas</label>
+          <div className="flex justify-between mt-4">
+            <button
+              type="button"
+              onClick={handleDeleteSelectedLabels}
+              className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700"
+            >
+              Eliminar Etiquetas
+            </button>
+
+            {selectedLabels.length === 1 && (
+              <button
+                type="button"
+                onClick={() => startEditingLabel(selectedLabels[0])}
+                className="px-3 py-1 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+              >
+                Editar Etiqueta
+              </button>
+            )}
+          </div>
+
+          {/* Formulario de edición de etiqueta */}
+          {editingLabel && (
+            <div className="mb-4">
+              <h3 className="text-sm font-medium text-gray-700">Editar Etiqueta</h3>
+              <input
+                type="text"
+                name="title"
+                value={editingLabel.title}
+                onChange={(e) => setEditingLabel({ ...editingLabel, title: e.target.value })}
+                className="mr-2 flex-grow rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+              />
+              <input
+                type="color"
+                name="colorHex"
+                value={editingLabel.colorHex}
+                onChange={(e) => setEditingLabel({ ...editingLabel, colorHex: e.target.value })}
+                className="mr-2"
+              />
+              <button
+                type="button"
+                onClick={handleEditLabel}
+                className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              >
+                Guardar Cambios
+              </button>
+            </div>
+          )}
+
+          {/* Muestra las etiquetas */}
           <div className="mt-2 flex flex-wrap gap-2">
             {labels.map(label => (
               <button
                 key={label.id}
                 type="button"
                 onClick={() => toggleLabelSelection(label.id)}
-                className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  selectedLabels.includes(label.id) ? 'ring-2 ring-offset-2 ring-indigo-500' : ''
-                }`}
+                className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedLabels.includes(label.id) ? 'ring-2 ring-offset-2 ring-indigo-500' : ''
+                  }`}
                 style={{ backgroundColor: label.colorHex, color: getContrastColor(label.colorHex) }}
               >
                 {label.title}
@@ -259,7 +386,8 @@ const ModalCreateTask = ({ isOpen, onClose, idWorkspace, onTaskCreated, setIsMod
             ))}
           </div>
         </div>
-        
+
+        {/* Formulario para crear nueva etiqueta */}
         <div className="mb-4">
           <h3 className="text-sm font-medium text-gray-700">Crear Nueva Etiqueta</h3>
           <div className="flex items-center mt-2">
@@ -316,6 +444,5 @@ const getContrastColor = (hexColor) => {
   const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
   return (yiq >= 128) ? 'black' : 'white';
 };
-
 
 export default ModalCreateTask;

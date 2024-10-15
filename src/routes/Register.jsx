@@ -17,32 +17,32 @@ function Register() {
     e.preventDefault();
     setLoading(true);
     setError('');
-
+  
     const formData = new FormData();
-    formData.append('firstName', firstName);
-    formData.append('lastName', lastName);
-    formData.append('email', email);
-    formData.append('password', password);
+    formData.append('user', new Blob([JSON.stringify({ firstName, lastName, email, password })], {
+      type: 'application/json'
+    }));
+    
     if (profileImage) {
       formData.append('profileImage', profileImage);
     }
-
+  
     try {
-      const response = await fetch('http://localhost:8080/api/users', {
+      const response = await fetch('http://localhost:8080/api/auth/register', {
         method: 'POST',
         body: formData,
-        // No es necesario especificar 'Content-Type' para FormData
-      });
-
-      if (!response.ok) {
+    });
+    
+    if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Respuesta del servidor:', data);
-
-      setSuccessMessage('Registro exitoso. Redirigiendo al login...');
-      setTimeout(() => navigate('/login'), 2000);
+    }
+    
+    // Cambiar a text() si el backend devuelve texto en lugar de JSON
+    const data = await response.text();
+    console.log('Respuesta del servidor:', data);
+    
+    setSuccessMessage('Registro exitoso. Redirigiendo al login...');
+    setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
       console.error('Error durante el registro:', err);
       setError(err.message || 'Ocurrió un error durante el registro');
@@ -50,7 +50,7 @@ function Register() {
       setLoading(false);
     }
   };
-
+  
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-900">
       <div className="w-full max-w-md p-8 bg-gray-800 rounded-lg shadow-lg">

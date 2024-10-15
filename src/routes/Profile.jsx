@@ -15,6 +15,7 @@ function Profile() {
   });
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -56,37 +57,47 @@ function Profile() {
     formData.append('firstName', userProfile.firstName || '');
     formData.append('lastName', userProfile.lastName || '');
     formData.append('email', userProfile.email || '');
+
     if (userProfile.profileImage instanceof File) {
       formData.append('profileImage', userProfile.profileImage);
     }
 
     try {
-        const response = await fetch(`http://localhost:8080/api/users/${userId}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        });
-      
-        if (response.ok) {
-          const updatedUser = await response.json();
-          setUserProfile(updatedUser.data);
-          setIsEditing(false);
-        } else {
-          const errorData = await response.json();
-          console.error('Error updating profile:', errorData);
-          // Maneja el error de acuerdo a tus necesidades, por ejemplo, muestra un mensaje al usuario
-        }
-      } catch (error) {
-        console.error('Error updating profile:', error);
-        // Maneja el error de acuerdo a tus necesidades, por ejemplo, muestra un mensaje al usuario
+      const response = await fetch(`http://localhost:8080/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const updatedUser = await response.json();
+        setUserProfile(updatedUser.data);
+        setIsEditing(false);
+      } else {
+        const errorData = await response.json();
+        console.error('Error updating profile:', errorData);
       }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    }
   };
 
+
   const handleProfileImageChange = (e) => {
-    setUserProfile({...userProfile, profileImage: e.target.files[0]});
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result);
+        setUserProfile({ ...userProfile, profileImage: file });
+      };
+      reader.readAsDataURL(file);
+    }
   };
+
+
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -108,7 +119,7 @@ function Profile() {
                   <input
                     type="text"
                     value={userProfile.firstName || ''}
-                    onChange={(e) => setUserProfile({...userProfile, firstName: e.target.value})}
+                    onChange={(e) => setUserProfile({ ...userProfile, firstName: e.target.value })}
                     className="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white"
                   />
                 </div>
@@ -117,7 +128,7 @@ function Profile() {
                   <input
                     type="text"
                     value={userProfile.lastName || ''}
-                    onChange={(e) => setUserProfile({...userProfile, lastName: e.target.value})}
+                    onChange={(e) => setUserProfile({ ...userProfile, lastName: e.target.value })}
                     className="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white"
                   />
                 </div>
@@ -126,11 +137,27 @@ function Profile() {
                   <input
                     type="email"
                     value={userProfile.email || ''}
-                    onChange={(e) => setUserProfile({...userProfile, email: e.target.value})}
+                    onChange={(e) => setUserProfile({ ...userProfile, email: e.target.value })}
                     className="mt-1 block w-full rounded-md bg-gray-700 border-transparent focus:border-indigo-500 focus:bg-gray-600 focus:ring-0 text-white"
                   />
                 </div>
                 <div>
+                  {previewImage ? (
+                    <img
+                      src={previewImage}
+                      alt="Preview"
+                      className="w-32 h-32 rounded-full object-cover"
+                    />
+                  ) : userProfile.profileImage ? (
+                    <img
+                      src={`data:image/jpeg;base64,${userProfile.profileImage}`}
+                      alt="Profile"
+                      className="w-32 h-32 rounded-full object-cover"
+                    />
+                  ) : (
+                    <BiUser className="w-32 h-32 text-gray-400" />
+                  )}
+
                   <label className="block text-sm font-medium text-gray-300">Imagen de Perfil</label>
                   <input
                     type="file"
@@ -163,9 +190,9 @@ function Profile() {
               <div className="space-y-4">
                 <div className="flex justify-center">
                   {userProfile.profileImage ? (
-                    <img 
-                      src={userProfile.profileImage instanceof File ? URL.createObjectURL(userProfile.profileImage) : userProfile.profileImage} 
-                      alt="Profile" 
+                    <img
+                      src={`data:image/jpeg;base64,${userProfile.profileImage}`}
+                      alt="Profile"
                       className="w-32 h-32 rounded-full object-cover"
                     />
                   ) : (

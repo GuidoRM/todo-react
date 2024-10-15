@@ -24,10 +24,6 @@ const router = createBrowserRouter([
     element: <Register />,
   },
   {
-    path: "/profile",
-    element: <Profile />
-  },
-  {
     path: "/",
     errorElement: <ErrorPage />,
     children: [
@@ -38,6 +34,14 @@ const router = createBrowserRouter([
             <Home />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "/profile",
+        element: (
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        )
       },
     ],
   },
